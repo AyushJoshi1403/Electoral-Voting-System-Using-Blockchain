@@ -10,7 +10,7 @@ const Navbar = () => {
             <div className="flex justify-between items-center gap-x-1">
               <Link
                 className="flex-none font-semibold text-xl text-black focus:outline-hidden focus:opacity-80 dark:text-white"
-                href="./page.jsx"
+                href="../page.jsx"
                 aria-label="Brand"
               >
                 Electoral Voting System

@@ -1,6 +1,7 @@
 // importing express
 const express = require('express');
 const UserRouter = require('./routers/userRouter');
+const VoterRouter = require('./routers/voterRouter');
 const cors = require('cors');
 
 // initializing express
@@ -14,6 +15,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use('/user', UserRouter);
+app.use('/voter', VoterRouter);
 
 // accept and process request
 // route
