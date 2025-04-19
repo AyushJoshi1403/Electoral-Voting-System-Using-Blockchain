@@ -236,7 +236,7 @@ const Navbar = () => {
                         </svg>
                         Account
                       </Link>
-                      <a
+                      <Link
                         className="p-2 flex items-center text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-hidden focus:bg-gray-100 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:focus:bg-neutral-700"
                         href="#"
                       >
@@ -258,7 +258,7 @@ const Navbar = () => {
                           <rect width={20} height={14} x={2} y={6} rx={2} />
                         </svg>
                         Work
-                      </a>
+                      </Link>
                       <a
                         className="p-2 flex items-center text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-hidden focus:bg-gray-100 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:focus:bg-neutral-700"
                         href="#"
