@@ -1,7 +1,7 @@
 const express = require('express');
 const Model = require('../models/voterModel');
 const jwt = require('jsonwebtoken');
-// const verifyToken = require('../middlewares/verifyToken');
+const verifyToken = require('../middlewares/verifyToken');
 
 require('dotenv').config();
 
