@@ -8,10 +8,10 @@ import * as Yup from 'yup';
 
 const VoterSchema = Yup.object().shape({
     voterId: Yup.string().required('Voter ID is required'),
-    name: Yup.string().required('Name is required'),
-    age: Yup.number().required('Age is required').positive().integer().min(18, 'Age must be at least 18'),
+    publicKey: Yup.string().required('Public Key is required'),
     votingDistrict: Yup.string().required('Voting District is required'),
     votingStatus: Yup.string().required('Voting Status is required').oneOf(['registered', 'not registered'], 'Invalid voting status'),
+    nonce: Yup.string().required('Nonce is required'),
 });
 
 const Voter = () => {
