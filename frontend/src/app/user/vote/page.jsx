@@ -48,7 +48,7 @@ const Voter = () => {
                 <div className="p-4 sm:p-7">
                     <div className="text-center">
                         <h1 className="block text-2xl font-bold text-gray-800 dark:text-white">
-                            Voting Data
+                            Voting System
                         </h1>
                     </div>
                     <div className="mt-5">
