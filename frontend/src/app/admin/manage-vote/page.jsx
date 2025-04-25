@@ -82,7 +82,6 @@ const ManageVotePage = () => {
                         }
                     </tbody>
                 </table>
-
             </div>
         </div>
     );
