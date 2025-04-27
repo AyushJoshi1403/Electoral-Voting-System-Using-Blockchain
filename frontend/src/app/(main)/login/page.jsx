@@ -3,8 +3,11 @@ import { useFormik } from 'formik';
 import React from 'react'
 import Link from 'next/link';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 const Login = () => {
+  
+  const router = useRouter();
 
   const signinForm = useFormik({
     initialValues: {
@@ -14,11 +17,12 @@ const Login = () => {
     onSubmit: async (values) => {
       console.log(values);
 
-      const res = await axios.post('http://localhost:5000/user/authenticate')
+      const res = await axios.post('http://localhost:5000/user/authenticate', values);
       console.log(res.data);
       console.log(res.status);
       if(res.status === 200){
         localStorage.setItem('token', res.data.token);
+        router.push('/user/profile');
       }
     }
   });

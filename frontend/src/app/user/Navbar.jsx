@@ -259,7 +259,7 @@ const Navbar = () => {
                         </svg>
                         Work
                       </Link>
-                      <a
+                      <Link
                         className="p-2 flex items-center text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-hidden focus:bg-gray-100 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:focus:bg-neutral-700"
                         href="#"
                       >
@@ -281,7 +281,7 @@ const Navbar = () => {
                           <path d="M10 6h8v4h-8V6Z" />
                         </svg>
                         Blog
-                      </a>
+                      </Link>
                     </div>
                   </div>
                   <div className="my-2 md:my-0 md:mx-2">
@@ -289,12 +289,6 @@ const Navbar = () => {
                   </div>
                   {/* Button Group */}
                   <div className=" flex flex-wrap items-center gap-x-1.5">
-                    <Link
-                      className="py-[7px] px-2.5 inline-flex items-center font-medium text-sm rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 focus:outline-hidden focus:bg-gray-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:focus:bg-neutral-700"
-                      href="login"
-                    >
-                      Sign in
-                    </Link>
                     <Link
                       className="py-2 px-2.5 inline-flex items-center font-medium text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:bg-blue-600"
                       href="signup"
