@@ -13,9 +13,8 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Import your contract ABI
-// Note: You'll need to import the ABI correctly based on your project structure
-const CONTRACT_ADDRESS = "npx hardhat run scripts/deploy.js --network localhost";
+// Fix CONTRACT_ADDRESS - this should be an actual address, not a command
+const CONTRACT_ADDRESS = "npx hardhat run scripts/deploy.js --network localhost"; // Replace with your actual deployed contract address
 let ElectionSystemABI;
 try {
   ElectionSystemABI = require('../artifacts/contracts/ElectionSystem.json').abi;
@@ -29,7 +28,7 @@ function Home() {
   const [contract, setContract] = useState(null);
   const [account, setAccount] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [elections, setElections] = useState([]);
+  const [elections, setElections] = useState([]); // Initialize as empty array
   const [loading, setLoading] = useState(true);
   const [newElection, setNewElection] = useState({
     name: '',
@@ -43,7 +42,7 @@ function Home() {
     party: ''
   });
   const [selectedElection, setSelectedElection] = useState(null);
-  const [candidates, setCandidates] = useState([]);
+  const [candidates, setCandidates] = useState([]); // Initialize as empty array
   const [isClient, setIsClient] = useState(false);
 
   // Set isClient to true when component mounts
@@ -372,7 +371,7 @@ function Home() {
                         required
                       >
                         <option value="">Select Election</option>
-                        {elections.map((election) => (
+                        {elections && elections.length > 0 && elections.map((election) => (
                           <option key={election.id} value={election.id}>
                             {election.name}
                           </option>
@@ -414,7 +413,7 @@ function Home() {
               <h2 className="text-xl font-semibold mb-4">Elections</h2>
               {loading ? (
                 <p>Loading elections...</p>
-              ) : elections.length === 0 ? (
+              ) : !elections || elections.length === 0 ? (
                 <p>No elections available</p>
               ) : (
                 <div className="space-y-4">
@@ -455,9 +454,9 @@ function Home() {
             {selectedElection !== null && (
               <div className="mt-8">
                 <h2 className="text-xl font-semibold mb-4">
-                  Candidates for {elections.find(e => e.id === selectedElection)?.name}
+                  Candidates for {elections && elections.find(e => e.id === selectedElection)?.name}
                 </h2>
-                {candidates.length === 0 ? (
+                {!candidates || candidates.length === 0 ? (
                   <p>No candidates available</p>
                 ) : (
                   <div className="space-y-4">
@@ -469,7 +468,7 @@ function Home() {
                         <button
                           onClick={() => castVote(selectedElection, candidate.id)}
                           className="mt-2 bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-1 px-3 rounded text-sm"
-                          disabled={!elections.find(e => e.id === selectedElection)?.isActive}
+                          disabled={!elections || !elections.find(e => e.id === selectedElection)?.isActive}
                         >
                           Vote
                         </button>
