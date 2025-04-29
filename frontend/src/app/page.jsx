@@ -86,15 +86,18 @@ function Home() {
     }
   };
 
-  // Load all elections
+  // Add logging to debug the elections data
   const loadElections = async (contractInstance) => {
     try {
       setLoading(true);
       const count = await contractInstance.electionCount();
+      console.log("Election count:", count.toNumber());
+
       const electionArray = [];
-      
       for (let i = 0; i < count.toNumber(); i++) {
         const details = await contractInstance.getElectionDetails(i);
+        console.log(`Election ${i} details:`, details);
+
         electionArray.push({
           id: i,
           name: details.name,
@@ -105,8 +108,9 @@ function Home() {
           candidateCount: details.candidateCount.toNumber()
         });
       }
-      
+
       setElections(electionArray);
+      console.log("Elections loaded:", electionArray);
       setLoading(false);
     } catch (error) {
       console.error("Error loading elections:", error);
@@ -291,7 +295,7 @@ function Home() {
           
           <div className="max-w-md mx-auto">
             <div>
-              <h1 className="text-2xl font-semibold">Blockchain Election System</h1>
+              <h1 className="text-2xl font-semibold">Blockchain Voting System</h1>
               {account ? (
                 <p className="mt-2">Connected: {account.substring(0, 6)}...{account.substring(account.length - 4)}</p>
               ) : (
@@ -416,8 +420,8 @@ function Home() {
               ) : !elections || elections.length === 0 ? (
                 <p>No elections available</p>
               ) : (
-                <div className="space-y-4">
-                  {elections.map((election) => (
+                elections && elections.length > 0 ? (
+                  elections.map((election) => (
                     <div key={election.id} className="border p-4 rounded-md">
                       <h3 className="text-lg font-medium">{election.name}</h3>
                       <p className="text-sm text-gray-600 mt-1">{election.description}</p>
@@ -446,8 +450,10 @@ function Home() {
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <p>No elections available</p>
+                )
               )}
             </div>
             
