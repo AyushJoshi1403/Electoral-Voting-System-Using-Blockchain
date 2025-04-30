@@ -13,7 +13,19 @@ const ProfileUpdate = () => {
 
   const fetchUserData = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/user/getbytoken'); // Fetch user data by token
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('Token is missing. Redirecting to login page.');
+        window.location.href = '/login';
+        return;
+      }
+
+      const res = await axios.get('http://localhost:5000/user/profile', {
+        headers: {
+          'x-auth-token': token,
+        },
+      });
+
       if (res.status === 200) {
         setUserData(res.data);
       } else {
