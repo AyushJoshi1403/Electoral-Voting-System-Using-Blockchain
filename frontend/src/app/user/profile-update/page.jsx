@@ -43,12 +43,24 @@ const ProfileUpdate = () => {
   }, []);
 
   const submitForm = (values) => {
-    axios.put('http://localhost:5000/user/update', values) // Update user data by token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('Token is missing. Redirecting to login page.');
+      window.location.href = '/login';
+      return;
+    }
+
+    axios.put('http://localhost:5000/user/update-profile', values, {
+      headers: {
+        'x-auth-token': token,
+      },
+    })
       .then(() => {
         toast.success('Profile updated successfully');
         router.push('/user/profile'); // Redirect to profile page after update
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Error updating profile:', error);
         toast.error('Failed to update profile');
       });
   };

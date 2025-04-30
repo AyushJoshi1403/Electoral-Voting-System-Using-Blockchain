@@ -142,4 +142,17 @@ router.get('/getbytoken', verifyToken, async (req, res) => {
     }
 });
 
+router.put('/update-profile', verifyToken, async (req, res) => {
+    try {
+        const updatedUser = await Model.findByIdAndUpdate(req.user._id, req.body, { new: true });
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        console.error('Error updating user profile:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
 module.exports = router;
