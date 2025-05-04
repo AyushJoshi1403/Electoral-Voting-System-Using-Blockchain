@@ -14,6 +14,7 @@ module.exports = {
     }
   },
   paths: {
-    artifacts: "./artifacts",
+    sources: "./src/smart_contracts",
+    artifacts: "./src/artifacts",
   },
 };
