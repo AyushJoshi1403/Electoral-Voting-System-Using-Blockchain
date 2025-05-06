@@ -50,258 +50,185 @@ const Signup = () => {
   });
 
   return (
-    <div className='max-w-xl mx-auto'>
-      <div className="mt-7 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-900 dark:border-neutral-700">
-        <div className="p-4 sm:p-7">
-          <div className="text-center">
-            <h1 className="block text-2xl font-bold text-gray-800 dark:text-white">
-              Sign up
+    <div className="min-h-[85vh] flex items-center justify-center px-4 py-10 bg-gradient-to-br from-blue-50 to-white sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100 transition-all duration-300 hover:shadow-2xl dark:bg-neutral-900 dark:border-neutral-800">
+        <div className="p-6 sm:p-8">
+          <div className="text-center space-y-3">
+            <div className="inline-block p-3 rounded-full bg-blue-50 dark:bg-blue-900/20">
+              <svg className="size-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              Create an account
             </h1>
-            <p className="mt-2 text-sm text-gray-600 dark:text-neutral-400">
-              Already have an account?
+            <p className="text-gray-600 dark:text-neutral-400">
+              Already have an account?{" "}
               <Link
-                className="text-blue-600 decoration-2 hover:underline focus:outline-none focus:underline font-medium dark:text-blue-500"
-                href="/login"
+                className="font-medium text-blue-600 transition-colors hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                href="login"
               >
                 Sign in here
               </Link>
             </p>
           </div>
-          <div className="mt-5">
+
+          <div className="mt-8 space-y-6">
             <button
               type="button"
-              className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
+              className="group relative w-full flex items-center justify-center py-3 px-4 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700"
             >
-              <svg
-                className="w-4 h-auto"
-                width={46}
-                height={47}
-                viewBox="0 0 46 47"
-                fill="none"
-              >
-                <path
-                  d="M46 24.0287C46 22.09 45.8533 20.68 45.5013 19.2112H23.4694V27.9356H36.4069C36.1429 30.1094 34.7347 33.37 31.5957 35.5731L31.5663 35.8669L38.5191 41.2719L38.9885 41.3306C43.4477 37.2181 46 31.1669 46 24.0287Z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M23.4694 47C29.8061 47 35.1161 44.9144 39.0179 41.3012L31.625 35.5437C29.6301 36.9244 26.9898 37.8937 23.4987 37.8937C17.2793 37.8937 12.0281 33.7812 10.1505 28.1412L9.88649 28.1706L2.61097 33.7812L2.52296 34.0456C6.36608 41.7125 14.287 47 23.4694 47Z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M10.1212 28.1413C9.62245 26.6725 9.32908 25.1156 9.32908 23.5C9.32908 21.8844 9.62245 20.3275 10.0918 18.8588V18.5356L2.75765 12.8369L2.52296 12.9544C0.909439 16.1269 0 19.7106 0 23.5C0 27.2894 0.909439 30.8731 2.49362 34.0456L10.1212 28.1413Z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M23.4694 9.07688C27.8699 9.07688 30.8622 10.9863 32.5344 12.5725L39.1645 6.11C35.0867 2.32063 29.8061 0 23.4694 0C14.287 0 6.36607 5.2875 2.49362 12.9544L10.0918 18.8588C11.9987 13.1894 17.25 9.07688 23.4694 9.07688Z"
-                  fill="#EB4335"
-                />
-              </svg>
+              <span className="absolute left-4">
+                <svg className="size-5" viewBox="0 0 48 48">
+                  <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                  <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                  <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                  <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                </svg>
+              </span>
               Sign up with Google
             </button>
-            <div className="py-3 flex items-center text-xs text-gray-400 uppercase before:flex-1 before:border-t before:border-gray-200 before:me-6 after:flex-1 after:border-t after:border-gray-200 after:ms-6 dark:text-neutral-500 dark:before:border-neutral-600 dark:after:border-neutral-600">
-              Or
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200 dark:border-neutral-700"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 text-gray-500 bg-white dark:bg-neutral-900 dark:text-neutral-400">
+                  or continue with
+                </span>
+              </div>
             </div>
-            {/* Form */}
-            <form onSubmit={signupForm.handleSubmit}>
-              <div className="grid gap-y-4">
-                {/* Form Group */}
+
+            <form onSubmit={signupForm.handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label
                     htmlFor="name"
-                    className="block text-sm mb-2 dark:text-white"
+                    className="block text-sm font-medium text-gray-700 dark:text-neutral-300"
                   >
-                    Name
+                    Full Name
                   </label>
-                  <div className="relative">
+                  <div className="mt-1">
                     <input
                       type="text"
                       id="name"
                       onChange={signupForm.handleChange}
                       value={signupForm.values.name}
-                      className="border py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
-                      required=""
-                      aria-describedby="name-error"
+                      className="block w-full px-4 py-3 text-gray-700 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:focus:ring-blue-600"
+                      required
                     />
-                    <div className="hidden absolute inset-y-0 end-0 pointer-events-none pe-3">
-                      <svg
-                        className="size-5 text-red-500"
-                        width={16}
-                        height={16}
-                        fill="currentColor"
-                        viewBox="0 0 16 16"
-                        aria-hidden="true"
-                      >
-                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
-                      </svg>
-                    </div>
                   </div>
-                  {
-                    (signupForm.errors.name && signupForm.touched.name) && (
-                      <p className="text-xs text-red-600 mt-2" id="email-error">
-                        {signupForm.errors.name}
-                      </p>
-                    )
-                  }
                 </div>
-                {/* End Form Group */}
-                {/* Form Group */}
+
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-sm mb-2 dark:text-white"
+                    className="block text-sm font-medium text-gray-700 dark:text-neutral-300"
                   >
                     Email address
                   </label>
-                  <div className="relative">
+                  <div className="mt-1">
                     <input
                       type="email"
                       id="email"
                       onChange={signupForm.handleChange}
                       value={signupForm.values.email}
-                      className="border py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
-                      required=""
-                      aria-describedby="email-error"
+                      className="block w-full px-4 py-3 text-gray-700 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:focus:ring-blue-600"
+                      required
                     />
-                    <div className="hidden absolute inset-y-0 end-0 pointer-events-none pe-3">
-                      <svg
-                        className="size-5 text-red-500"
-                        width={16}
-                        height={16}
-                        fill="currentColor"
-                        viewBox="0 0 16 16"
-                        aria-hidden="true"
-                      >
-                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
-                      </svg>
-                    </div>
                   </div>
-                  {
-                    (signupForm.errors.email && signupForm.touched.email) && (
-                      <p className="text-xs text-red-600 mt-2" id="email-error">
-                        {signupForm.errors.email}
-                      </p>
-                    )
-                  }
                 </div>
-                {/* End Form Group */}
-                {/* Form Group */}
+
                 <div>
                   <label
                     htmlFor="password"
-                    className="block text-sm mb-2 dark:text-white"
+                    className="block text-sm font-medium text-gray-700 dark:text-neutral-300"
                   >
                     Password
                   </label>
-                  <div className="relative">
+                  <div className="mt-1">
                     <input
                       type="password"
                       id="password"
                       onChange={signupForm.handleChange}
                       value={signupForm.values.password}
-                      className="border py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
-                      required=""
-                      aria-describedby="password-error"
+                      className="block w-full px-4 py-3 text-gray-700 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:focus:ring-blue-600"
+                      required
                     />
-                    <div className="hidden absolute inset-y-0 end-0 pointer-events-none pe-3">
-                      <svg
-                        className="size-5 text-red-500"
-                        width={16}
-                        height={16}
-                        fill="currentColor"
-                        viewBox="0 0 16 16"
-                        aria-hidden="true"
-                      >
-                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
-                      </svg>
-                    </div>
                   </div>
-                  {
-                    (signupForm.errors.password && signupForm.touched.password) && (
-                      <p className="text-xs text-red-600 mt-2" id="email-error">
-                        {signupForm.errors.password}
-                      </p>
-                    )
-                  }
                 </div>
-                {/* End Form Group */}
-                {/* Form Group */}
+
                 <div>
                   <label
-                    htmlFor="confirm-password"
-                    className="block text-sm mb-2 dark:text-white"
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium text-gray-700 dark:text-neutral-300"
                   >
                     Confirm Password
                   </label>
-                  <div className="relative">
+                  <div className="mt-1">
                     <input
                       type="password"
                       id="confirmPassword"
                       onChange={signupForm.handleChange}
                       value={signupForm.values.confirmPassword}
-                      className="border py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
-                      required=""
-                      aria-describedby="confirm-password-error"
-                    />
-                    <div className="hidden absolute inset-y-0 end-0 pointer-events-none pe-3">
-                      <svg
-                        className="size-5 text-red-500"
-                        width={16}
-                        height={16}
-                        fill="currentColor"
-                        viewBox="0 0 16 16"
-                        aria-hidden="true"
-                      >
-                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
-                      </svg>
-                    </div>
-                  </div>
-                  {
-                    (signupForm.errors.confirmPassword && signupForm.touched.confirmPassword) && (
-                      <p className="text-xs text-red-600 mt-2" id="email-error">
-                        {signupForm.errors.confirmPassword}
-                      </p>
-                    )
-                  }
-                </div>
-                {/* End Form Group */}
-                {/* Checkbox */}
-                <div className="flex items-center">
-                  <div className="flex">
-                    <input
-                      id="remember-me"
-                      name="remember-me"
-                      type="checkbox"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
+                      className="block w-full px-4 py-3 text-gray-700 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:focus:ring-blue-600"
+                      required
                     />
                   </div>
-                  <div className="ms-3">
-                    <label htmlFor="remember-me" className="text-sm dark:text-white">
-                      I accept the{" "}
-                      <a
-                        className="text-blue-600 decoration-2 hover:underline focus:outline-none focus:underline font-medium dark:text-blue-500"
-                        href="#"
-                      >
-                        Terms and Conditions
-                      </a>
-                    </label>
-                  </div>
                 </div>
-                {/* End Checkbox */}
-                <button
-                  type="submit"
-                  className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  Sign up
-                </button>
               </div>
+
+              <div>
+                <label
+                  htmlFor="address"
+                  className="block text-sm font-medium text-gray-700 dark:text-neutral-300"
+                >
+                  Address
+                </label>
+                <div className="mt-1">
+                  <textarea
+                    id="address"
+                    rows={3}
+                    onChange={signupForm.handleChange}
+                    value={signupForm.values.address}
+                    className="block w-full px-4 py-3 text-gray-700 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:focus:ring-blue-600"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  id="terms"
+                  name="terms"
+                  type="checkbox"
+                  className="size-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-neutral-700 dark:border-neutral-600"
+                  required
+                />
+                <label
+                  htmlFor="terms"
+                  className="ml-2 block text-sm text-gray-700 dark:text-neutral-300"
+                >
+                  I agree to the{" "}
+                  <a href="#" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                    Terms and Conditions
+                  </a>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full px-4 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 dark:hover:bg-blue-700 dark:focus:ring-offset-neutral-900"
+              >
+                Create Account
+              </button>
             </form>
-            {/* End Form */}
           </div>
         </div>
       </div>
     </div>
-
-  )
-}
+  );
+};
 
 export default Signup;
