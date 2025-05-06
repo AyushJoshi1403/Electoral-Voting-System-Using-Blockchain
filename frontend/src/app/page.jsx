@@ -13,13 +13,15 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Fix CONTRACT_ADDRESS - this should be an actual address, not a command
-const CONTRACT_ADDRESS = "npx hardhat run scripts/deploy.js --network localhost"; // Replace with your actual deployed contract address
+// Import your contract ABI and address
 let ElectionSystemABI;
+let CONTRACT_ADDRESS = "";
 try {
-  ElectionSystemABI = require('../artifacts/contracts/ElectionSystem.json').abi;
+  ElectionSystemABI = require('../artifacts/src/smart_contracts/election.sol/ElectionSystem.json').abi;
+  // Dynamically import contract address from generated JSON
+  CONTRACT_ADDRESS = require('../contract-address.json').address;
 } catch (error) {
-  console.error("Failed to load ABI, make sure your contract is compiled");
+  console.error("Failed to load ABI or contract address:", error);
 }
 
 function Home() {
@@ -59,24 +61,41 @@ function Home() {
 
     try {
       if (window.ethereum) {
-        // console.log(window.ethereum);
-        
+        // Request account access
         await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
-        const account = await signer.getAddress();
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, ElectionSystemABI, signer);
         
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        console.log('Provider created:', provider);
+
+        const signer = await provider.getSigner();
+        console.log('Signer obtained:', await signer.getAddress());
+
+        const account = await signer.getAddress();
+        console.log('Connected account:', account);
+
+        console.log('Contract address:', CONTRACT_ADDRESS);
+        console.log('Contract ABI:', ElectionSystemABI);
+        
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, ElectionSystemABI, signer);
+        console.log('Contract instance created');
+
         setProvider(provider);
         setSigner(signer);
         setContract(contract);
         setAccount(account);
         
-        // Check if user is admin
-        const admin = await contract.admin();
-        setIsAdmin(admin.toLowerCase() === account.toLowerCase());
-        
-        loadElections(contract);
+        try {
+          console.log('Checking admin status for account:', account);
+          const adminResult = await contract.isAdmin(account);
+          console.log('Admin status result:', adminResult.toString());
+          setIsAdmin(Boolean(adminResult));
+          
+          await loadElections(contract);
+        } catch (adminError) {
+          console.error('Error checking admin status:', adminError);
+          setIsAdmin(false);
+          toast.error("Error checking admin status: " + (adminError.message || adminError));
+        }
       } else {
         toast.error("Please install MetaMask to use this application");
       }
@@ -90,7 +109,7 @@ function Home() {
   const loadElections = async (contractInstance) => {
     try {
       setLoading(true);
-      const count = await contractInstance.electionCount();
+      const count = await contractInstance.getElectionCount();
       console.log("Election count:", count.toNumber());
 
       const electionArray = [];

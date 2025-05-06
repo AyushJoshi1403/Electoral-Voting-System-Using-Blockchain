@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const Profile = () => {
-  
+
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -16,14 +16,14 @@ const Profile = () => {
     }
 
     axios
-      .get('http://localhost:3000/user/profile', { // Updated the URL to match the backend route
+      .get('http://localhost:5000/user/profile', { // Updated the URL to match the backend route
         headers: {
           'x-auth-token': token,
         },
       })
       .then((response) => {
         console.log(response.data);
-        
+
         setUser(response.data);
       })
       .catch((error) => {

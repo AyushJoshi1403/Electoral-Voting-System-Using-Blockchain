@@ -25,9 +25,10 @@ contract ElectionSystem {
 
     // Mapping of election ID to election
     mapping(uint256 => Election) public elections;
-    uint256 public electionCount;
+    // Made private to enforce using the getter
+    uint256 private _electionCount;
 
-    address public admin;
+    address public immutable admin;
     
     // Events
     event ElectionCreated(uint256 indexed electionId, string name, uint256 startTime, uint256 endTime);
@@ -37,12 +38,23 @@ contract ElectionSystem {
 
     constructor() {
         admin = msg.sender;
+        _electionCount = 0;
+    }
+
+    // Getter function for election count
+    function getElectionCount() public view returns (uint256) {
+        return _electionCount;
     }
 
     // Modifier to restrict functions to admin only
     modifier onlyAdmin() {
         require(msg.sender == admin, "Only admin can perform this action");
         _;
+    }
+
+    // Function to check if an address is admin
+    function isAdmin(address _address) public view returns (bool) {
+        return _address == admin;
     }
 
     // Create a new election
@@ -54,7 +66,7 @@ contract ElectionSystem {
     ) public onlyAdmin {
         require(_startTime < _endTime, "End time must be after start time");
         
-        uint256 electionId = electionCount++;
+        uint256 electionId = _electionCount++;
         Election storage newElection = elections[electionId];
         newElection.id = electionId;
         newElection.name = _name;
@@ -73,7 +85,7 @@ contract ElectionSystem {
         string memory _name,
         string memory _party
     ) public onlyAdmin {
-        require(_electionId < electionCount, "Election does not exist");
+        require(_electionId < _electionCount, "Election does not exist");
         require(!isElectionActive(_electionId), "Cannot add candidate to active election");
         
         Election storage election = elections[_electionId];
@@ -90,7 +102,7 @@ contract ElectionSystem {
 
     // Toggle election active status
     function toggleElection(uint256 _electionId, bool _isActive) public onlyAdmin {
-        require(_electionId < electionCount, "Election does not exist");
+        require(_electionId < _electionCount, "Election does not exist");
         
         Election storage election = elections[_electionId];
         election.isActive = _isActive;
@@ -100,7 +112,7 @@ contract ElectionSystem {
 
     // Cast a vote
     function castVote(uint256 _electionId, uint256 _candidateId) public {
-        require(_electionId < electionCount, "Election does not exist");
+        require(_electionId < _electionCount, "Election does not exist");
         require(isElectionActive(_electionId), "Election is not active");
         require(block.timestamp >= elections[_electionId].startTime, "Election has not started yet");
         require(block.timestamp <= elections[_electionId].endTime, "Election has ended");
@@ -122,7 +134,7 @@ contract ElectionSystem {
         bool isActive,
         uint256 candidateCount
     ) {
-        require(_electionId < electionCount, "Election does not exist");
+        require(_electionId < _electionCount, "Election does not exist");
         
         Election storage election = elections[_electionId];
         return (
@@ -141,7 +153,7 @@ contract ElectionSystem {
         string memory party,
         uint256 voteCount
     ) {
-        require(_electionId < electionCount, "Election does not exist");
+        require(_electionId < _electionCount, "Election does not exist");
         require(_candidateId < elections[_electionId].candidateCount, "Candidate does not exist");
         
         Candidate storage candidate = elections[_electionId].candidates[_candidateId];
@@ -154,19 +166,19 @@ contract ElectionSystem {
 
     // Check if voter has already voted
     function hasVoted(uint256 _electionId, address _voter) public view returns (bool) {
-        require(_electionId < electionCount, "Election does not exist");
+        require(_electionId < _electionCount, "Election does not exist");
         return elections[_electionId].hasVoted[_voter];
     }
 
     // Check if election is active
     function isElectionActive(uint256 _electionId) public view returns (bool) {
-        require(_electionId < electionCount, "Election does not exist");
+        require(_electionId < _electionCount, "Election does not exist");
         return elections[_electionId].isActive;
     }
 
     // Get all candidates for an election
     function getCandidateCount(uint256 _electionId) public view returns (uint256) {
-        require(_electionId < electionCount, "Election does not exist");
+        require(_electionId < _electionCount, "Election does not exist");
         return elections[_electionId].candidateCount;
     }
 }
