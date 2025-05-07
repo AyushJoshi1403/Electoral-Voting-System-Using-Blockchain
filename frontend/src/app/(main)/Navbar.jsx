@@ -259,7 +259,7 @@ const Navbar = () => {
                       </svg>
                       Work
                     </Link>
-                    <a
+                    <Link
                       className="p-2 flex items-center text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-hidden focus:bg-gray-100 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:focus:bg-neutral-700"
                       href="#"
                     >
@@ -281,7 +281,7 @@ const Navbar = () => {
                         <path d="M10 6h8v4h-8V6Z" />
                       </svg>
                       Blog
-                    </a>
+                    </Link>
                   </div>
                 </div>
                 <div className="my-2 md:my-0 md:mx-2">
@@ -311,8 +311,6 @@ const Navbar = () => {
       </header>
       {/* ========== END HEADER ========== */}
     </>
-
-
   )
 }
 
