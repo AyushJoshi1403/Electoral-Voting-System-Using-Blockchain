@@ -179,7 +179,7 @@ const Signup = () => {
                 </div>
               </div>
 
-              <div>
+              {/* <div>
                 <label
                   htmlFor="address"
                   className="block text-sm font-medium text-gray-700 dark:text-neutral-300"
@@ -196,7 +196,7 @@ const Signup = () => {
                     required
                   />
                 </div>
-              </div>
+              </div> */}
 
               <div className="flex items-center">
                 <input
