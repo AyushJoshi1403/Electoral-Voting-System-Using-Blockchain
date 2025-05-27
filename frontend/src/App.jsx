@@ -9,8 +9,8 @@ import AdminPanel from './components/AdminPanel';
 import VotingArea from './components/VotingArea';
 import ResultsPage from './components/ResultsPage';
 import DeployContract from './components/DeployContract';
-// import LoginPage from './components/login';
-import SignupPage from './components/signup';
+// import LoginPage from './components/LoginPage';
+// import SignupPage from './components/SignupPage';
 
 const theme = createTheme({
   palette: {
