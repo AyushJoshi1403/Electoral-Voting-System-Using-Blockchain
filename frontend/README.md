@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Electoral Voting System Using Blockchain
 
-## Getting Started
+A secure electoral voting system built with React v19 and Ethereum blockchain technology.
 
-First, run the development server:
+## Features
+
+- **Blockchain-based Voting**: Secure, transparent, and tamper-proof voting system
+- **Smart Contract**: Ethereum smart contract handles the election logic
+- **Admin Panel**: Add candidates, register voters, start and end voting periods
+- **Voter Interface**: Easy-to-use interface for casting votes
+- **Real-time Results**: View election results and statistics
+
+## Tech Stack
+
+- **Frontend**: React v19, Material-UI
+- **Blockchain Interaction**: ethers.js
+- **Smart Contract Development**: Solidity, Hardhat
+- **Routing**: React Router
+
+## Prerequisites
+
+- Node.js v18+
+- MetaMask browser extension or any Ethereum wallet
+- Git
+
+## Setup Instructions
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Compile Smart Contracts
+
+```bash
+npx hardhat compile
+```
+
+### 3. Start Local Blockchain
+
+Open a new terminal and run:
+
+```bash
+npx hardhat node
+```
+
+This will start a local Ethereum blockchain with several pre-funded accounts for testing.
+
+### 4. Deploy Smart Contract
+
+In a separate terminal:
+
+```bash
+npx hardhat run scripts/deploy.ts --network localhost
+```
+
+Note the contract address that's displayed after deployment.
+
+### 5. Start the Frontend Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 6. Set Up MetaMask
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+- Add the Hardhat local network to MetaMask:
+  - Network Name: Hardhat
+  - RPC URL: http://127.0.0.1:8545
+  - Chain ID: 1337
+  - Currency Symbol: ETH
+- Import one of the accounts provided by Hardhat using its private key
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Usage
 
-## Learn More
+### Admin Functions
 
-To learn more about Next.js, take a look at the following resources:
+- **Add Candidates**: Enter candidate details including name, party, and manifesto
+- **Register Voters**: Add wallet addresses that are allowed to vote
+- **Start Voting**: Begin the voting period with a specified duration
+- **End Voting**: Conclude the voting period manually
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Voter Functions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Cast Vote**: Select a candidate and submit your vote
+- **View Results**: See the election results after voting concludes
 
-## Deploy on Vercel
+## Smart Contract Details
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The `VotingSystem.sol` contract includes:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Candidate and voter management
+- Voting functionality with checks to prevent double-voting
+- Time-based voting period controls
+- Results calculation and winner determination
+
+## Development Notes
+
+- React v19 is used for the frontend
+- The application uses Vite for faster development and builds
+- Material-UI provides the component library for the interface
+- Component structure follows React best practices with reusable components
