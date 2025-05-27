@@ -21,6 +21,7 @@ import {
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useBlockchain } from '../context/BlockchainContext';
 import { useNavigate } from 'react-router-dom';
+import ApiService from '../services/api';
 
 export default function AdminPanel() {
   const navigate = useNavigate();
@@ -38,6 +39,12 @@ export default function AdminPanel() {
     refreshData,
     fetchRegisteredVoters
   } = useBlockchain();
+
+  // Backend data states
+  const [backendElections, setBackendElections] = useState([]);
+  const [backendCandidates, setBackendCandidates] = useState([]);
+  const [backendVoters, setBackendVoters] = useState([]);
+  const [currentElectionId, setCurrentElectionId] = useState(null);
 
   // State for new candidate
   const [newCandidate, setNewCandidate] = useState({
@@ -67,19 +74,47 @@ export default function AdminPanel() {
     }
   }, [account, isAdmin, navigate]);
 
-  // Fetch registered voters on component mount
+  // Load backend data on component mount
   useEffect(() => {
     if (isAdmin) {
-      fetchRegisteredVoters();
+      loadBackendData();
     }
-  }, [isAdmin, fetchRegisteredVoters]);
+  }, [isAdmin]);
+
+  // Load all backend data
+  const loadBackendData = async () => {
+    try {
+      const [elections, voters] = await Promise.all([
+        ApiService.getElections(),
+        ApiService.getRegisteredVoters()
+      ]);
+      
+      setBackendElections(elections);
+      setBackendVoters(voters);
+      
+      // If there's a current election, load its candidates
+      if (elections.length > 0) {
+        const currentElection = elections[0]; // Get most recent election
+        setCurrentElectionId(currentElection._id);
+        const candidates = await ApiService.getCandidates(currentElection._id);
+        setBackendCandidates(candidates);
+      }
+    } catch (error) {
+      console.error('Error loading backend data:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to load data from backend',
+        severity: 'error'
+      });
+    }
+  };
 
   // Handle closing snackbar
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Handle adding a candidate
+  // Handle adding a candidate (sync with blockchain and backend)
   const handleAddCandidate = async () => {
     if (!newCandidate.name || !newCandidate.party) {
       setSnackbar({
@@ -92,26 +127,45 @@ export default function AdminPanel() {
 
     setLoading(true);
     try {
-      const success = await addCandidate(
+      // First add to blockchain
+      const blockchainSuccess = await addCandidate(
         newCandidate.name,
         newCandidate.party,
         newCandidate.manifesto || ''
       );
 
-      if (success) {
+      if (blockchainSuccess && currentElectionId) {
+        // Then sync with backend
+        await ApiService.createCandidate({
+          blockchainId: candidates.length, // Use current blockchain candidate count
+          electionId: currentElectionId,
+          electionBlockchainId: 0, // Assuming single election for now
+          name: newCandidate.name,
+          party: newCandidate.party,
+          description: newCandidate.manifesto || '',
+          voteCount: 0
+        });
+
         setSnackbar({
           open: true,
           message: 'Candidate added successfully',
           severity: 'success'
         });
+        
         setNewCandidate({
           name: '',
           party: '',
           manifesto: ''
         });
-        await refreshData();
+        
+        // Refresh both blockchain and backend data
+        await Promise.all([
+          refreshData(),
+          loadBackendData()
+        ]);
       }
     } catch (err) {
+      console.error('Error adding candidate:', err);
       setSnackbar({
         open: true,
         message: `Error adding candidate: ${err.message}`,
@@ -122,7 +176,7 @@ export default function AdminPanel() {
     }
   };
 
-  // Handle registering a voter
+  // Handle registering a voter (sync with blockchain and backend)
   const handleRegisterVoter = async () => {
     if (!voterAddress) {
       setSnackbar({
@@ -135,18 +189,33 @@ export default function AdminPanel() {
 
     setLoading(true);
     try {
-      const success = await registerVoter(voterAddress);
+      // First register on blockchain
+      const blockchainSuccess = await registerVoter(voterAddress);
 
-      if (success) {
+      if (blockchainSuccess) {
+        // Then sync with backend
+        await ApiService.registerVoter({
+          walletAddress: voterAddress.toLowerCase(),
+          registeredBy: account,
+          hasVoted: false
+        });
+
         setSnackbar({
           open: true,
           message: 'Voter registered successfully',
           severity: 'success'
         });
+        
         setVoterAddress('');
-        await fetchRegisteredVoters(); // Refresh registered voters list
+        
+        // Refresh both blockchain and backend data
+        await Promise.all([
+          fetchRegisteredVoters(),
+          loadBackendData()
+        ]);
       }
     } catch (err) {
+      console.error('Error registering voter:', err);
       setSnackbar({
         open: true,
         message: `Error registering voter: ${err.message}`,
@@ -163,14 +232,23 @@ export default function AdminPanel() {
     try {
       const success = await startVoting(votingDuration);
 
-      if (success) {
+      if (success && currentElectionId) {
+        // Update election status in backend
+        await ApiService.updateElection(currentElectionId, {
+          isActive: true,
+          startTime: new Date()
+        });
+
         setSnackbar({
           open: true,
           message: 'Voting started successfully',
           severity: 'success'
         });
+        
+        await loadBackendData();
       }
     } catch (err) {
+      console.error('Error starting voting:', err);
       setSnackbar({
         open: true,
         message: `Error starting voting: ${err.message}`,
@@ -187,14 +265,23 @@ export default function AdminPanel() {
     try {
       const success = await endVoting();
 
-      if (success) {
+      if (success && currentElectionId) {
+        // Update election status in backend
+        await ApiService.updateElection(currentElectionId, {
+          isActive: false,
+          endTime: new Date()
+        });
+
         setSnackbar({
           open: true,
           message: 'Voting ended successfully',
           severity: 'success'
         });
+        
+        await loadBackendData();
       }
     } catch (err) {
+      console.error('Error ending voting:', err);
       setSnackbar({
         open: true,
         message: `Error ending voting: ${err.message}`,
@@ -213,6 +300,10 @@ export default function AdminPanel() {
     );
   }
 
+  // Use backend data when available, fallback to blockchain data
+  const displayCandidates = backendCandidates.length > 0 ? backendCandidates : candidates;
+  const displayVoters = backendVoters.length > 0 ? backendVoters : registeredVoters;
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
@@ -221,6 +312,13 @@ export default function AdminPanel() {
       <Typography variant="h6" color="primary" gutterBottom>
         {electionInfo?.name || 'Election Administration'}
       </Typography>
+
+      {/* Backend Status Indicator */}
+      <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'info.light' }}>
+        <Typography variant="body2" color="white">
+          Backend Status: {backendElections.length > 0 ? '✅ Connected' : '⚠️ Using blockchain data only'}
+        </Typography>
+      </Paper>
 
       {/* Current Status */}
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
@@ -255,7 +353,7 @@ export default function AdminPanel() {
                   variant="contained" 
                   color="primary" 
                   onClick={handleStartVoting}
-                  disabled={loading || candidates.length === 0}
+                  disabled={loading || displayCandidates.length === 0}
                 >
                   {loading ? <CircularProgress size={24} /> : 'Start Voting'}
                 </Button>
@@ -285,7 +383,7 @@ export default function AdminPanel() {
         </Grid>
       </Paper>
 
-      {/* Election Statistics */}
+      {/* Election Statistics - Updated to use backend data */}
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
           Election Summary
@@ -295,14 +393,14 @@ export default function AdminPanel() {
           <Grid item xs={12} sm={4}>
             <Paper elevation={1} sx={{ p: 2, bgcolor: 'primary.light', color: 'white', textAlign: 'center', height: '100%' }}>
               <Typography variant="body2">Total Candidates</Typography>
-              <Typography variant="h4" sx={{ my: 1 }}>{candidates.length}</Typography>
+              <Typography variant="h4" sx={{ my: 1 }}>{displayCandidates.length}</Typography>
             </Paper>
           </Grid>
           
           <Grid item xs={12} sm={4}>
             <Paper elevation={1} sx={{ p: 2, bgcolor: 'secondary.light', color: 'white', textAlign: 'center', height: '100%' }}>
               <Typography variant="body2">Registered Voters</Typography>
-              <Typography variant="h4" sx={{ my: 1 }}>{registeredVoters?.length || 0}</Typography>
+              <Typography variant="h4" sx={{ my: 1 }}>{displayVoters?.length || 0}</Typography>
             </Paper>
           </Grid>
           
@@ -310,7 +408,7 @@ export default function AdminPanel() {
             <Paper elevation={1} sx={{ p: 2, bgcolor: 'success.light', color: 'white', textAlign: 'center', height: '100%' }}>
               <Typography variant="body2">Votes Cast</Typography>
               <Typography variant="h4" sx={{ my: 1 }}>
-                {electionInfo?.isOpen ? '...' : registeredVoters?.filter(voter => voter.hasVoted).length || 0}
+                {electionInfo?.isOpen ? '...' : displayVoters?.filter(voter => voter.hasVoted).length || 0}
               </Typography>
             </Paper>
           </Grid>
@@ -321,9 +419,20 @@ export default function AdminPanel() {
         {/* Candidate Management */}
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
-            <Typography variant="h6" gutterBottom>
-              Add Candidate
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">
+                Add Candidate
+              </Typography>
+              <Button 
+                size="small" 
+                variant="outlined"
+                onClick={loadBackendData}
+                startIcon={<RefreshIcon />}
+                disabled={loading}
+              >
+                Sync
+              </Button>
+            </Box>
             
             <TextField
               label="Candidate Name"
@@ -369,9 +478,20 @@ export default function AdminPanel() {
         {/* Voter Registration */}
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
-            <Typography variant="h6" gutterBottom>
-              Register Voter
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">
+                Register Voter
+              </Typography>
+              <Button 
+                size="small" 
+                variant="outlined"
+                onClick={loadBackendData}
+                startIcon={<RefreshIcon />}
+                disabled={loading}
+              >
+                Sync
+              </Button>
+            </Box>
             
             <TextField
               label="Voter Wallet Address"
@@ -395,16 +515,16 @@ export default function AdminPanel() {
         </Grid>
       </Grid>
 
-      {/* Candidates List */}
+      {/* Candidates List - Updated to show backend data */}
       <Paper elevation={2} sx={{ p: 3, mt: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6">
-            Current Candidates
+            Current Candidates {backendCandidates.length > 0 && '(Backend Data)'}
           </Typography>
           <Button 
             size="small" 
             variant="outlined"
-            onClick={() => refreshData()}
+            onClick={loadBackendData}
             startIcon={<RefreshIcon />}
             disabled={loading}
           >
@@ -412,7 +532,7 @@ export default function AdminPanel() {
           </Button>
         </Box>
         
-        {candidates.length === 0 ? (
+        {displayCandidates.length === 0 ? (
           <Typography variant="body2" color="textSecondary">
             No candidates have been added yet
           </Typography>
@@ -429,12 +549,12 @@ export default function AdminPanel() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {candidates.map((candidate) => (
+                  {displayCandidates.map((candidate, index) => (
                     <TableRow 
-                      key={candidate.id}
+                      key={candidate._id || candidate.id || index}
                       sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}
                     >
-                      <TableCell>{candidate.id}</TableCell>
+                      <TableCell>{candidate.blockchainId ?? candidate.id ?? index}</TableCell>
                       <TableCell>{candidate.name}</TableCell>
                       <TableCell>
                         <Chip 
@@ -454,7 +574,7 @@ export default function AdminPanel() {
                             {candidate.voteCount > 0 && (
                               <Chip 
                                 size="small" 
-                                label={`${((candidate.voteCount / candidates.reduce((sum, c) => sum + c.voteCount, 0)) * 100).toFixed(1)}%`} 
+                                label={`${((candidate.voteCount / displayCandidates.reduce((sum, c) => sum + c.voteCount, 0)) * 100).toFixed(1)}%`} 
                                 color="primary" 
                                 variant="outlined"
                               />
@@ -468,29 +588,29 @@ export default function AdminPanel() {
               </Table>
             </TableContainer>
             <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-              Total Candidates: {candidates.length}
+              Total Candidates: {displayCandidates.length}
             </Typography>
           </>
         )}
       </Paper>
 
-      {/* Registered Voters List */}
+      {/* Registered Voters List - Updated to show backend data */}
       <Paper elevation={2} sx={{ p: 3, mt: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6">
-            Registered Voters
+            Registered Voters {backendVoters.length > 0 && '(Backend Data)'}
           </Typography>
           <Button 
             size="small" 
             variant="outlined"
-            onClick={() => fetchRegisteredVoters()}
+            onClick={loadBackendData}
             startIcon={<RefreshIcon />}
           >
             Refresh
           </Button>
         </Box>
         
-        {registeredVoters?.length === 0 ? (
+        {displayVoters?.length === 0 ? (
           <Typography variant="body2" color="textSecondary">
             No voters have been registered yet
           </Typography>
@@ -502,21 +622,22 @@ export default function AdminPanel() {
                   <TableRow>
                     <TableCell sx={{ fontWeight: 'bold' }}>Address</TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Registered</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {registeredVoters.map((voter, index) => (
+                  {displayVoters.map((voter, index) => (
                     <TableRow 
-                      key={index}
+                      key={voter._id || index}
                       sx={{ 
-                        backgroundColor: voter.address === account ? 'rgba(25, 118, 210, 0.08)' : 'inherit',
+                        backgroundColor: (voter.walletAddress || voter.address) === account ? 'rgba(25, 118, 210, 0.08)' : 'inherit',
                         '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
                       }}
                     >
                       <TableCell>
-                        {voter.address === account ? (
+                        {(voter.walletAddress || voter.address) === account ? (
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {voter.address}
+                            {voter.walletAddress || voter.address}
                             <Chip 
                               label="You" 
                               color="primary" 
@@ -526,7 +647,7 @@ export default function AdminPanel() {
                             />
                           </Box>
                         ) : (
-                          voter.address
+                          voter.walletAddress || voter.address
                         )}
                       </TableCell>
                       <TableCell>
@@ -536,13 +657,16 @@ export default function AdminPanel() {
                           <Chip color="default" label="Not Voted" size="small" />
                         )}
                       </TableCell>
+                      <TableCell>
+                        {voter.createdAt ? new Date(voter.createdAt).toLocaleDateString() : 'N/A'}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </TableContainer>
             <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-              Total Registered Voters: {registeredVoters.length}
+              Total Registered Voters: {displayVoters.length}
             </Typography>
           </>
         )}

@@ -1,13 +1,25 @@
-const { model, Schema } = require('../connection');
+const mongoose = require('mongoose');
 
-const mySchema = new Schema({
-    voterId: { type: String, unique: true, required: true },                        // Unique voter ID (hashed from government ID)
-    publicKey: { type: String, required: true },                                    // Voter's public key for verification
-    votingDistrict: { type: String, required: true },                               // Electoral district/precinct identifier
-    votingStatus: { type: String, enum: ['not_voted', 'voted'], required: true },   // Current voting status
-    nonce: { type: String, required: true },                                        // One-time use value to prevent replay attacks
-    registrationTimestamp: { type: Date, default: Date.now },                       // When voter was registered on the blockchain
-    lastAuthTimestamp: { type: Date }                                               // Last authentication timestamp
+const voterSchema = new mongoose.Schema({
+  walletAddress: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true
+  },
+  name: String,
+  email: String,
+  hasVoted: {
+    type: Boolean,
+    default: false
+  },
+  votedAt: Date,
+  registeredBy: {
+    type: String, // admin wallet address
+    required: true
+  }
+}, {
+  timestamps: true
 });
 
-module.exports = model('voters', mySchema);
+module.exports = mongoose.model('Voter', voterSchema);
