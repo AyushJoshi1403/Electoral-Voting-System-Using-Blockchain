@@ -1,17 +1,11 @@
 "use client"
 // pages/index.tsx
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 
-// Import ethers only on client side
-let ethers;
-if (typeof window !== 'undefined') {
-  // Dynamic import for ethers
-  import('ethers').then(eth => {
-    ethers = eth;
-  });
-}
+// Don't initialize ethers as a bare variable
+let ethersLib = null; // Will hold the entire module
 
 // Import your contract ABI and address
 let ElectionSystemABI;
@@ -46,15 +40,27 @@ function Home() {
   const [selectedElection, setSelectedElection] = useState(null);
   const [candidates, setCandidates] = useState([]); // Initialize as empty array
   const [isClient, setIsClient] = useState(false);
+  const [ethersLoaded, setEthersLoaded] = useState(false);
 
-  // Set isClient to true when component mounts
+  // Set isClient to true and load ethers when component mounts
   useEffect(() => {
     setIsClient(true);
+    
+    // Import ethers only on client side
+    if (typeof window !== 'undefined') {
+      import('ethers').then(importedEthers => {
+        ethersLib = importedEthers;
+        console.log("Ethers loaded successfully");
+        console.log("Ethers structure:", Object.keys(importedEthers)); // Show top-level exports
+        console.log("Ethers providers:", importedEthers.providers ? Object.keys(importedEthers.providers) : "No providers property");
+        setEthersLoaded(true);
+      });
+    }
   }, []);
 
   // Connect to MetaMask
   const connectWallet = async () => {
-    if (!isClient || !ethers) {
+    if (!isClient || !ethersLoaded) {
       toast.error("Application is initializing. Please try again in a moment.");
       return;
     }
@@ -64,21 +70,32 @@ function Home() {
         // Request account access
         await window.ethereum.request({ method: 'eth_requestAccounts' });
         
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        console.log('Provider created:', provider);
-
-        const signer = await provider.getSigner();
-        console.log('Signer obtained:', await signer.getAddress());
-
-        const account = await signer.getAddress();
-        console.log('Connected account:', account);
-
-        console.log('Contract address:', CONTRACT_ADDRESS);
-        console.log('Contract ABI:', ElectionSystemABI);
+        // Diagnose the ethers structure to locate BrowserProvider
+        console.log("Ethers module structure:", Object.keys(ethersLib));
         
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, ElectionSystemABI, signer);
-        console.log('Contract instance created');
-
+        // Try multiple potential locations for BrowserProvider
+        let provider;
+        if (ethersLib.BrowserProvider) {
+          provider = new ethersLib.BrowserProvider(window.ethereum);
+        } else if (ethersLib.providers && ethersLib.providers.BrowserProvider) {
+          provider = new ethersLib.providers.BrowserProvider(window.ethereum);
+        } else if (ethersLib.providers && ethersLib.providers.Web3Provider) {
+          // Fallback to Web3Provider for ethers v5 compatibility
+          provider = new ethersLib.providers.Web3Provider(window.ethereum);
+        } else {
+          throw new Error("Could not find a compatible Provider in the ethers library");
+        }
+        
+        const signer = await provider.getSigner();
+        const account = await signer.getAddress();
+        
+        // Use Contract constructor directly from ethersLib
+        const contract = new ethersLib.Contract(CONTRACT_ADDRESS, ElectionSystemABI, signer);
+        
+        console.log('Provider created:', provider);
+        console.log('Signer obtained:', await signer.getAddress());
+        console.log('Connected account:', account);
+        
         setProvider(provider);
         setSigner(signer);
         setContract(contract);
@@ -110,10 +127,11 @@ function Home() {
     try {
       setLoading(true);
       const count = await contractInstance.getElectionCount();
-      console.log("Election count:", count.toNumber());
+      console.log("Election count:", Number(count));
 
       const electionArray = [];
-      for (let i = 0; i < count.toNumber(); i++) {
+      // Update this to use Number() instead of .toNumber()
+      for (let i = 0; i < Number(count); i++) {
         const details = await contractInstance.getElectionDetails(i);
         console.log(`Election ${i} details:`, details);
 
@@ -121,10 +139,11 @@ function Home() {
           id: i,
           name: details.name,
           description: details.description,
-          startTime: new Date(details.startTime.toNumber() * 1000).toLocaleString(),
-          endTime: new Date(details.endTime.toNumber() * 1000).toLocaleString(),
+          // Update these to use Number() instead of .toNumber()
+          startTime: new Date(Number(details.startTime) * 1000).toLocaleString(),
+          endTime: new Date(Number(details.endTime) * 1000).toLocaleString(),
           isActive: details.isActive,
-          candidateCount: details.candidateCount.toNumber()
+          candidateCount: Number(details.candidateCount)
         });
       }
 
@@ -235,7 +254,8 @@ function Home() {
       const candidateCount = await contract.getCandidateCount(electionId);
       const candidateArray = [];
       
-      for (let i = 0; i < candidateCount.toNumber(); i++) {
+      // Change this to use Number() instead of .toNumber()
+      for (let i = 0; i < Number(candidateCount); i++) {
         const details = await contract.getCandidateDetails(electionId, i);
         candidateArray.push({
           id: i,
@@ -280,7 +300,7 @@ function Home() {
 
   // Only run on client side
   useEffect(() => {
-    if (isClient) {
+    if (isClient && ethersLoaded) {
       if (typeof window !== 'undefined' && window.ethereum) {
         // Handle account changes
         window.ethereum.on('accountsChanged', () => {
@@ -288,9 +308,7 @@ function Home() {
         });
         
         // Attempt to connect (but don't force it)
-        if (ethers) {
-          connectWallet().catch(console.error);
-        }
+        connectWallet().catch(console.error);
       }
     }
     
@@ -299,7 +317,7 @@ function Home() {
         window.ethereum.removeAllListeners('accountsChanged');
       }
     };
-  }, [isClient, ethers]);
+  }, [isClient, ethersLoaded]); // Add ethersLoaded as a dependency
 
   // If we're not on client side, show a loading state
   if (!isClient) {
@@ -310,7 +328,6 @@ function Home() {
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
       <div className="relative py-3 sm:max-w-5xl sm:mx-auto">
         <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
-          <Toaster position="top-right" />
           
           <div className="max-w-md mx-auto">
             <div>
