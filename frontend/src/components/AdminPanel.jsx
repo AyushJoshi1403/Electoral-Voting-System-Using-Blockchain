@@ -66,20 +66,32 @@ export default function AdminPanel() {
   // Load all backend data
   const loadBackendData = async () => {
     try {
+      console.log('Loading backend data...');
+      
       const [elections, voters] = await Promise.all([
         ApiService.getElections(),
         ApiService.getRegisteredVoters()
       ]);
+      
+      console.log('Loaded elections:', elections.length);
+      console.log('Loaded voters:', voters.length);
       
       setBackendElections(elections);
       setBackendVoters(voters);
       
       // If there's a current election, load its candidates
       if (elections.length > 0) {
-        const currentElection = elections[0]; // Get most recent election
+        const currentElection = elections.find(e => e.isActive) || elections[0]; // Prefer active election
         setCurrentElectionId(currentElection._id);
-        const candidates = await ApiService.getCandidates(currentElection._id);
-        setBackendCandidates(candidates);
+        
+        const candidatesData = await ApiService.getCandidates(currentElection._id);
+        console.log('Loaded candidates:', candidatesData.length);
+        
+        setBackendCandidates(candidatesData);
+      } else {
+        console.log('No elections found, clearing candidates');
+        setBackendCandidates([]);
+        setCurrentElectionId(null);
       }
     } catch (error) {
       console.error('Error loading backend data:', error);
@@ -116,35 +128,68 @@ export default function AdminPanel() {
         newCandidate.manifesto || ''
       );
 
-      if (blockchainSuccess && currentElectionId) {
-        // Then sync with backend
-        await ApiService.createCandidate({
-          blockchainId: candidates.length, // Use current blockchain candidate count
-          electionId: currentElectionId,
-          electionBlockchainId: 0, // Assuming single election for now
-          name: newCandidate.name,
-          party: newCandidate.party,
-          description: newCandidate.manifesto || '',
-          voteCount: 0
-        });
+      if (blockchainSuccess) {
+        // Create election in backend if it doesn't exist
+        let electionId = currentElectionId;
+        if (!electionId && backendElections.length === 0) {
+          try {
+            const newElection = await ApiService.createElection({
+              blockchainId: 0,
+              name: electionInfo?.name || "Demo Election 2025",
+              description: "Demonstration of blockchain voting system",
+              startTime: new Date(),
+              endTime: new Date(Date.now() + 30 * 60 * 1000),
+              contractAddress: "0x0000000000000000000000000000000000000000",
+              createdBy: account,
+              isActive: false
+            });
+            electionId = newElection._id;
+            setCurrentElectionId(electionId);
+          } catch (error) {
+            console.error('Error creating election:', error);
+          }
+        } else if (!electionId && backendElections.length > 0) {
+          electionId = backendElections[0]._id;
+          setCurrentElectionId(electionId);
+        }
 
-        setSnackbar({
-          open: true,
-          message: 'Candidate added successfully',
-          severity: 'success'
-        });
-        
-        setNewCandidate({
-          name: '',
-          party: '',
-          manifesto: ''
-        });
-        
-        // Refresh both blockchain and backend data
-        await Promise.all([
-          refreshData(),
-          loadBackendData()
-        ]);
+        if (electionId) {
+          // Then sync with backend - use the correct candidate count
+          const currentCandidateCount = Math.max(backendCandidates.length, candidates.length);
+          
+          await ApiService.createCandidate({
+            blockchainId: currentCandidateCount, // Use current count as blockchain ID
+            electionId: electionId,
+            electionBlockchainId: 0, // Assuming single election for now
+            name: newCandidate.name,
+            party: newCandidate.party,
+            description: newCandidate.manifesto || '',
+            manifesto: newCandidate.manifesto || '',
+            voteCount: 0
+          });
+
+          setSnackbar({
+            open: true,
+            message: 'Candidate added successfully',
+            severity: 'success'
+          });
+          
+          setNewCandidate({
+            name: '',
+            party: '',
+            manifesto: ''
+          });
+          
+          // Refresh backend data first, then blockchain data
+          await loadBackendData();
+          if (refreshData) {
+            await refreshData();
+          }
+        } else {
+          throw new Error('No election available to add candidate to');
+        }
+      } else {
+        throw new Error('Failed to add candidate to blockchain');
       }
     } catch (err) {
       console.error('Error adding candidate:', err);
@@ -274,6 +319,31 @@ export default function AdminPanel() {
     }
   };
 
+  // Add this function after loadBackendData
+  const handleForceRefresh = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        loadBackendData(),
+        refreshData?.()
+      ]);
+      setSnackbar({
+        open: true,
+        message: 'Data refreshed successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error refreshing data',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!account || !isAdmin) {
     return (
       <Box>
@@ -301,6 +371,27 @@ export default function AdminPanel() {
           Backend Status: {backendElections.length > 0 ? '✅ Connected' : '⚠️ Using blockchain data only'}
         </Typography>
       </Paper>
+
+      {/* Debug Information - Remove in production */}
+      {process.env.NODE_ENV === 'development' && (
+        <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'grey.100' }}>
+          <Typography variant="body2" gutterBottom>
+            <strong>Debug Info:</strong>
+          </Typography>
+          <Typography variant="caption" display="block">
+            Backend Elections: {backendElections.length} | Backend Candidates: {backendCandidates.length} | Backend Voters: {backendVoters.length}
+          </Typography>
+          <Typography variant="caption" display="block">
+            Blockchain Candidates: {candidates?.length || 0} | Blockchain Voters: {registeredVoters?.length || 0}
+          </Typography>
+          <Typography variant="caption" display="block">
+            Current Election ID: {currentElectionId || 'None'}
+          </Typography>
+          <Typography variant="caption" display="block">
+            Display Candidates Count: {displayCandidates.length}
+          </Typography>
+        </Paper>
+      )}
 
       {/* Current Status */}
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
@@ -506,11 +597,11 @@ export default function AdminPanel() {
           <Button 
             size="small" 
             variant="outlined"
-            onClick={loadBackendData}
+            onClick={handleForceRefresh}
             startIcon={<RefreshIcon />}
             disabled={loading}
           >
-            Refresh
+            {loading ? <CircularProgress size={16} /> : 'Refresh'}
           </Button>
         </Box>
         

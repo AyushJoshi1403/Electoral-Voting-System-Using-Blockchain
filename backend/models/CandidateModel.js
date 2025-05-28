@@ -33,4 +33,9 @@ const candidateSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('Candidate', candidateSchema);
+// Compound index for unique candidates per election
+candidateSchema.index({ electionId: 1, blockchainId: 1 }, { unique: true });
+candidateSchema.index({ electionBlockchainId: 1, blockchainId: 1 });
+
+// Check if model already exists before compiling
+module.exports = mongoose.models.Candidate || mongoose.model('Candidate', candidateSchema);

@@ -9,11 +9,13 @@ const electionSchema = new mongoose.Schema({
   },
   name: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   description: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   startTime: {
     type: Date,
@@ -29,23 +31,55 @@ const electionSchema = new mongoose.Schema({
   },
   contractAddress: {
     type: String,
-    required: true
+    required: true,
+    lowercase: true
   },
   createdBy: {
     type: String, // wallet address
-    required: true
+    required: true,
+    lowercase: true
   },
   totalVotes: {
     type: Number,
     default: 0
   },
   voters: [{
-    walletAddress: String,
+    walletAddress: {
+      type: String,
+      lowercase: true
+    },
     transactionHash: String,
-    votedAt: Date
-  }]
+    votedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  // Additional metadata
+  maxVoters: {
+    type: Number,
+    default: null
+  },
+  votingDuration: {
+    type: Number, // in minutes
+    default: 30
+  },
+  isCompleted: {
+    type: Boolean,
+    default: false
+  },
+  winner: {
+    candidateId: mongoose.Schema.Types.ObjectId,
+    candidateName: String,
+    voteCount: Number
+  }
 }, {
   timestamps: true
 });
 
-module.exports = mongoose.model('Election', electionSchema);
+// Indexes
+electionSchema.index({ blockchainId: 1 });
+electionSchema.index({ isActive: 1 });
+electionSchema.index({ createdBy: 1 });
+
+// Check if model already exists before compiling
+module.exports = mongoose.models.Election || mongoose.model('Election', electionSchema);
