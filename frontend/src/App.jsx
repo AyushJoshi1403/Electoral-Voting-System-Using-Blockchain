@@ -9,6 +9,8 @@ import AdminPanel from './components/AdminPanel';
 import VotingArea from './components/VotingArea';
 import ResultsPage from './components/ResultsPage';
 import DeployContract from './components/DeployContract';
+// import Login from './components/LoginPage';
+// import Signup from './components/SignupPage';
 
 const theme = createTheme({
   palette: {
@@ -104,6 +106,8 @@ function App() {
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/vote" element={<VotingArea />} />
               <Route path="/results" element={<ResultsPage />} />
+              {/* <Route path="/login" element={<Login />} /> */}
+              {/* <Route path="/signup" element={<Signup />} /> */}
             </Routes>
           )}
         </Container>
