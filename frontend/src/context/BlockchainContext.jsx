@@ -1,6 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
-import ApiService from '../services/api';
 
 // Hardcoded ABI for when artifacts aren't available
 const VotingSystemArtifact = {
@@ -156,13 +155,6 @@ export default function BlockchainProvider({ children }) {
   // For development, we'll need to update this with the deployed address
   const [contractAddress, setContractAddress] = useState('');
 
-  // Add backend data states
-  const [backendConnected, setBackendConnected] = useState(false);
-  const [backendElections, setBackendElections] = useState([]);
-  const [backendCandidates, setBackendCandidates] = useState([]);
-  const [backendVoters, setBackendVoters] = useState([]);
-  const [currentElectionId, setCurrentElectionId] = useState(null);
-
   const connectWallet = async () => {
     try {
       setLoading(true);
@@ -174,300 +166,210 @@ export default function BlockchainProvider({ children }) {
 
       // Request account access
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const account = accounts[0];
-      setAccount(account);
-
-      // Set up provider and signer
-      const ethersProvider = new ethers.BrowserProvider(window.ethereum);
-      const ethersSigner = await ethersProvider.getSigner();
       
-      setProvider(ethersProvider);
-      setSigner(ethersSigner);
-      
-      // Get network info
-      const network = await ethersProvider.getNetwork();
-      setNetworkName(network.name);
+      if (accounts.length > 0) {
+        const connectedAccount = accounts[0];
+        setAccount(connectedAccount);
+        // Store connected wallet information
+        localStorage.setItem('walletConnected', 'true');
+        
+        // Set up provider and signer
+        const ethersProvider = new ethers.BrowserProvider(window.ethereum);
+        const ethersSigner = await ethersProvider.getSigner();
+        
+        setProvider(ethersProvider);
+        setSigner(ethersSigner);
+        
+        // Get network info
+        const network = await ethersProvider.getNetwork();
+        setNetworkName(network.name);
 
-      // If we have a contract address, connect to the contract
-      if (contractAddress) {
-        await connectToContract(ethersProvider, ethersSigner, contractAddress);
+        // If we have a contract address, connect to the contract
+        if (contractAddress) {
+          await connectToContract(ethersProvider, ethersSigner, contractAddress);
+        }
       }
-
+    } catch (error) {
+      console.error('Error connecting to wallet:', error);
+      setError(error.message || 'Error connecting to wallet');
+    } finally {
       setLoading(false);
-    } catch (err) {
-      console.error('Error connecting to wallet:', err);
-      setError(err.message || 'Error connecting to wallet');
-      setLoading(false);
     }
-  };
-  // Function to check backend connection
-  const checkBackendConnection = async () => {
+  };  const connectToContract = async (provider, signer, address) => {
     try {
-      await fetch('http://localhost:5000/api/health');
-      setBackendConnected(true);
-      return true;
-    } catch (error) {
-      console.log('Backend not connected, using blockchain data only');
-      setBackendConnected(false);
-      return false;
-    }
-  };
-
-  // Function to load backend data
-  const loadBackendData = async () => {
-    try {
-      if (!backendConnected) return;
-
-      const [elections, voters] = await Promise.all([
-        ApiService.getElections(),
-        ApiService.getRegisteredVoters()
-      ]);
-      
-      setBackendElections(elections);
-      setBackendVoters(voters);
-      
-      // If there's a current election, load its candidates
-      if (elections.length > 0) {
-        const currentElection = elections[0]; // Get most recent election
-        setCurrentElectionId(currentElection._id);
-        const candidatesData = await ApiService.getCandidates(currentElection._id);
-        setBackendCandidates(candidatesData);
-      }
-    } catch (error) {
-      console.error('Error loading backend data:', error);
-      setBackendConnected(false);
-    }
-  };
-
-  // Add this function after loadBackendData
-  const createElectionInBackend = async (electionData) => {
-    try {
-      if (!backendConnected) return null;
-      
-      const election = await ApiService.createElection({
-        blockchainId: 0, // For demo purposes
-        name: electionData.name || "Demo Election 2025",
-        description: electionData.description || "Demonstration of blockchain voting system",
-        startTime: new Date(),
-        endTime: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
-        contractAddress: contractAddress || "0x0000000000000000000000000000000000000000",
-        createdBy: account,
-        isActive: false
-      });
-      
-      setCurrentElectionId(election._id);
-      await loadBackendData();
-      return election;
-    } catch (error) {
-      console.error('Error creating election in backend:', error);
-      return null;
-    }
-  };
-
-  // Enhanced connectToContract function
-  const connectToContract = async (provider, signer, address) => {
-    try {
-      // Check backend connection first
-      await checkBackendConnection();
-      
-      // If backend is connected but no election exists, create one
-      if (backendConnected && backendElections.length === 0) {
-        await createElectionInBackend({
-          name: "Demo Election 2025",
-          description: "Demonstration of blockchain voting system"
-        });
-      }
-      
       if (!address) return;
+        // Create mock contract with relevant methods for development purposes
+      // Add state management for voting
+      let votingState = {
+        isOpen: false,
+        startTime: 0,
+        endTime: 0,
+        remainingTime: 0
+      };
       
-      // Create mock contract with relevant methods for development purposes
+      // Try to load stored voting state
+      try {
+        const storedVotingState = localStorage.getItem('mockVotingState');
+        if (storedVotingState) {
+          votingState = JSON.parse(storedVotingState);
+          console.log('Loaded stored voting state:', votingState);
+        }
+      } catch (err) {
+        console.error('Error loading stored voting state:', err);
+      }
+      
+      // Track voter states
+      let voterStates = {};
+
+      // Track candidates - load from localStorage if available
+      let mockCandidates = [];
+      
+      // Try to load stored candidates if we're using the mock contract
+      try {
+        const storedCandidates = localStorage.getItem('mockCandidates');
+        if (storedCandidates) {
+          mockCandidates = JSON.parse(storedCandidates);
+          console.log('Loaded stored candidates:', mockCandidates);
+        }
+      } catch (err) {
+        console.error('Error loading stored candidates:', err);
+      }
+      
       const mockContract = {
         admin: async () => account,
-        electionName: async () => {
-          // Try to get from backend first, fallback to mock
-          if (backendConnected && backendElections.length > 0) {
-            return backendElections[0].name;
-          }
-          return "Demo Election 2025";
-        },
+        electionName: async () => "Mock Election 2025",
         getVotingStatus: async () => {
-          // Try to get from backend first
-          if (backendConnected && backendElections.length > 0) {
-            const election = backendElections[0];
-            return [election.isActive, 0, 0, 0];
-          }
-          return [false, 0, 0, 0];
-        },
-        getVoterStatus: async (voterAddress) => {
-          // Check backend for voter status
-          if (backendConnected) {
-            const voter = backendVoters.find(v => 
-              v.walletAddress?.toLowerCase() === voterAddress?.toLowerCase()
-            );
-            return [!!voter, voter?.hasVoted || false, voter?.votedCandidateId || 0];
-          }
-          return [true, false, 0];
-        },
-        getCandidatesCount: async () => {
-          if (backendConnected && backendCandidates.length > 0) {
-            return backendCandidates.length;
-          }
-          return 3;
-        },
-        getCandidate: async (id) => {
-          if (backendConnected && backendCandidates.length > 0) {
-            const candidate = backendCandidates[id];
-            if (candidate) {
-              return [
-                id,
-                candidate.name,
-                candidate.party,
-                candidate.manifesto || candidate.description,
-                candidate.voteCount || 0
-              ];
+          // Update remaining time if voting is open
+          if (votingState.isOpen) {
+            const now = Math.floor(Date.now() / 1000);
+            const remaining = Math.max(0, votingState.endTime - now);
+            votingState.remainingTime = remaining;
+            
+            // Auto-close voting if time is up
+            if (remaining <= 0) {
+              votingState.isOpen = false;
+              votingState.remainingTime = 0;
             }
           }
-          // Fallback to mock data
-          const mockCandidates = [
-            [0, "John Doe", "Party A", "Building a better future", 0],
-            [1, "Jane Smith", "Party B", "Prosperity for all", 0],
-            [2, "Robert Johnson", "Party C", "Security and growth", 0]
+          
+          return [
+            votingState.isOpen, 
+            votingState.startTime, 
+            votingState.endTime, 
+            votingState.remainingTime
           ];
-          return mockCandidates[id % 3];
+        },
+        getVoterStatus: async (address) => {
+          const voterAddress = address || account;
+          const voterState = voterStates[voterAddress] || { isRegistered: true, hasVoted: false, candidateId: 0 };
+          return [voterState.isRegistered, voterState.hasVoted, voterState.candidateId];
+        },
+        getCandidatesCount: async () => mockCandidates.length,
+        getCandidate: async (id) => {
+          if (id >= 0 && id < mockCandidates.length) {
+            const candidate = mockCandidates[id];
+            return [candidate.id, candidate.name, candidate.party, candidate.manifesto, candidate.voteCount];
+          }
+          throw new Error("Candidate not found");
         },
         addCandidate: async (name, party, manifesto) => {
-          console.log(`Adding candidate ${name} from ${party}`);
+          const newCandidate = {
+            id: mockCandidates.length,
+            name,
+            party,
+            manifesto: manifesto || '',
+            voteCount: 0
+          };
+          mockCandidates.push(newCandidate);
+          console.log(`Mock: Added candidate ${name} from ${party} with manifesto: ${manifesto}`);
           
-          // Try to save to backend first
-          if (backendConnected && currentElectionId) {
-            try {
-              await ApiService.createCandidate({
-                name,
-                party,
-                manifesto: manifesto || '',
-                description: manifesto || '',
-                electionId: currentElectionId,
-                blockchainId: backendCandidates.length, // Use current count as blockchain ID
-                electionBlockchainId: 0, // Assuming single election
-                voteCount: 0
-              });
-              // Reload backend data
-              await loadBackendData();
-              return { wait: async () => true };
-            } catch (error) {
-              console.error('Error saving to backend:', error);
-              throw error;
-            }
-          }
+          // Save updated candidates to localStorage
+          localStorage.setItem('mockCandidates', JSON.stringify(mockCandidates));
           
           return { wait: async () => true };
         },
         registerVoter: async (voterAddress) => {
-          console.log(`Registering voter ${voterAddress}`);
-          
-          // Try to save to backend
-          if (backendConnected && currentElectionId) {
-            try {
-              await ApiService.registerVoter({
-                walletAddress: voterAddress,
-                electionId: currentElectionId
-              });
-              // Reload backend data
-              await loadBackendData();
-            } catch (error) {
-              console.error('Error saving voter to backend:', error);
-            }
-          }
-          
+          console.log(`Mock: Registered voter ${voterAddress}`);
+          // Initialize voter state
+          voterStates[voterAddress] = {
+            isRegistered: true,
+            hasVoted: false,
+            candidateId: 0
+          };
           return { wait: async () => true };
         },
         startVoting: async (duration) => {
-          console.log(`Starting voting for ${duration} minutes`);
+          console.log(`Mock: Started voting for ${duration} minutes`);
+          // Update voting state
+          const now = Math.floor(Date.now() / 1000);
+          const endTime = now + (duration * 60); // Convert minutes to seconds
+          votingState = {
+            isOpen: true,
+            startTime: now,
+            endTime: endTime,
+            remainingTime: duration * 60
+          };
           
-          // Update backend if connected
-          if (backendConnected && currentElectionId) {
-            try {
-              await ApiService.updateElection(currentElectionId, {
-                isActive: true,
-                startTime: new Date(),
-                duration: duration
-              });
-              await loadBackendData();
-            } catch (error) {
-              console.error('Error updating election in backend:', error);
-            }
-          }
+          // Store voting state
+          localStorage.setItem('mockVotingState', JSON.stringify(votingState));
           
           return { wait: async () => true };
         },
+        
         endVoting: async () => {
-          console.log(`Ending voting`);
+          console.log(`Mock: Ended voting`);
+          // Update voting state
+          votingState = {
+            ...votingState,
+            isOpen: false,
+            remainingTime: 0
+          };
           
-          // Update backend if connected
-          if (backendConnected && currentElectionId) {
-            try {
-              await ApiService.updateElection(currentElectionId, {
-                isActive: false,
-                endTime: new Date()
-              });
-              await loadBackendData();
-            } catch (error) {
-              console.error('Error updating election in backend:', error);
-            }
+          // Store updated voting state
+          localStorage.setItem('mockVotingState', JSON.stringify(votingState));
+          
+          return { wait: async () => true };
+        },        vote: async (candidateId) => {
+          console.log(`Mock: Voted for candidate ${candidateId}`);
+          // Update voter state
+          voterStates[account] = {
+            isRegistered: true,
+            hasVoted: true,
+            candidateId: candidateId
+          };
+          
+          // Update candidate vote count
+          if (candidateId < mockCandidates.length) {
+            mockCandidates[candidateId].voteCount += 1;
+            // Save updated candidates with vote counts
+            localStorage.setItem('mockCandidates', JSON.stringify(mockCandidates));
           }
           
           return { wait: async () => true };
         },
-        vote: async (candidateId) => {
-          console.log(`Voting for candidate ${candidateId}`);
-          
-          // Record vote in backend
-          if (backendConnected && currentElectionId) {
-            try {
-              await ApiService.recordVote({
-                candidateId,
-                voterAddress: account,
-                electionId: currentElectionId
-              });
-              await loadBackendData();
-            } catch (error) {
-              console.error('Error recording vote in backend:', error);
-            }
-          }
-          
-          return { wait: async () => true };
-        },
-        getWinner: async () => {
-          // Calculate winner from backend data
-          if (backendConnected && backendCandidates.length > 0) {
-            const winner = backendCandidates.reduce((prev, current) => 
-              (prev.voteCount > current.voteCount) ? prev : current
-            );
-            return [winner._id, winner.name, winner.voteCount || 0];
-          }
-          return [0, "John Doe", 5];
-        }
+        getWinner: async () => [0, "John Doe", 5]
       };
       
       setContract(mockContract);
+      
+      // Set admin status - in mock mode, the connected account is always admin
       setIsAdmin(true);
 
-      // Load backend data
-      await loadBackendData();
-
-      // Set election info
+      // Set mock election name
       const name = await mockContract.electionName();
-      const [isOpen, startTime, endTime, remainingTime] = await mockContract.getVotingStatus();
       
-      setElectionInfo({
+      // Set mock voting status
+      const [isOpen, startTime, endTime, remainingTime] = await mockContract.getVotingStatus();
+        setElectionInfo(prev => ({
+        ...prev,
         name,
         isOpen,
         startTime: Number(startTime),
         endTime: Number(endTime),
         remainingTime: Number(remainingTime),
-      });
+      }));
 
-      // Set voter information
+      // Set mock voter information
       if (account) {
         const [isRegistered, hasVoted, candidateId] = await mockContract.getVoterStatus(account);
         setVoter({
@@ -477,8 +379,13 @@ export default function BlockchainProvider({ children }) {
         });
       }
 
-      // Get candidates
+      // Get mock candidates
       await fetchCandidates(mockContract);
+      
+      // Fetch registered voters if admin
+      if (isAdmin) {
+        await fetchRegisteredVoters();
+      }
       
       setError('');
     } catch (err) {
@@ -486,28 +393,12 @@ export default function BlockchainProvider({ children }) {
       setError(`Error connecting to contract: ${err.message}`);
     }
   };
-
-  // Enhanced fetchCandidates function
   const fetchCandidates = async (votingContract) => {
     try {
       const contractToUse = votingContract || contract;
       if (!contractToUse) return;
 
-      // If backend is connected, use backend data
-      if (backendConnected && backendCandidates.length > 0) {
-        const formattedCandidates = backendCandidates.map((candidate, index) => ({
-          id: index,
-          blockchainId: candidate._id,
-          name: candidate.name,
-          party: candidate.party,
-          manifesto: candidate.manifesto || candidate.description,
-          voteCount: candidate.voteCount || 0,
-        }));
-        setCandidates(formattedCandidates);
-        return;
-      }
-
-      // Fallback to contract/mock data
+      // If we're working with a mock contract or real contract, we'll handle both cases
       const count = await contractToUse.getCandidatesCount();
       const fetchedCandidates = [];
 
@@ -530,27 +421,23 @@ export default function BlockchainProvider({ children }) {
     } catch (err) {
       console.error('Error fetching candidates:', err);
       setError(`Error fetching candidates: ${err.message}`);
+      
+      // Don't set mock candidates as fallback
+      setCandidates([]);
     }
   };
 
-  // Enhanced refreshData function
   const refreshData = async () => {
-    // Refresh backend connection and data
-    await checkBackendConnection();
-    await loadBackendData();
-
     if (contract && account) {
-      try {
-        // Refresh voting status
+      try {        // Refresh voting status
         const [isOpen, startTime, endTime, remainingTime] = await contract.getVotingStatus();
-        
-        setElectionInfo({
-          ...electionInfo,
+          setElectionInfo(prev => ({
+          ...prev,
           isOpen,
           startTime: Number(startTime),
           endTime: Number(endTime),
           remainingTime: Number(remainingTime),
-        });
+        }));
 
         // Refresh voter information
         const [isRegistered, hasVoted, candidateId] = await contract.getVoterStatus(account);
@@ -576,17 +463,28 @@ export default function BlockchainProvider({ children }) {
 
   // Function to add a candidate
   const addCandidate = async (name, party, manifesto) => {
-    if (!contract || !isAdmin) return;
-    
     try {
-      const tx = await contract.addCandidate(name, party, manifesto);
+      if (!contract) {
+        throw new Error('Contract not connected');
+      }
+      
+      if (!isAdmin) {
+        throw new Error('Only admin can add candidates');
+      }
+
+      // Call the contract's addCandidate function
+      const tx = await contract.addCandidate(name, party, manifesto || '');
       await tx.wait();
+      
+      // After successful transaction, refresh the candidates list
       await fetchCandidates();
+      
+      console.log('Candidate added:', name);
       return true;
-    } catch (err) {
-      console.error('Error adding candidate:', err);
-      setError(`Error adding candidate: ${err.message}`);
-      return false;
+    } catch (error) {
+      console.error('Error adding candidate:', error);
+      setError(`Error adding candidate: ${error.message}`);
+      throw error;
     }
   };
 
@@ -681,10 +579,8 @@ export default function BlockchainProvider({ children }) {
       setError(`Error getting winner: ${err.message}`);
       return null;
     }
-  };
-
-  // Function to fetch registered voters
-  const fetchRegisteredVoters = async () => {
+  };  // Function to fetch registered voters
+  const fetchRegisteredVoters = useCallback(async () => {
     if (!contract || !isAdmin) return [];
     
     try {
@@ -692,13 +588,16 @@ export default function BlockchainProvider({ children }) {
       // in a real app we'd use events or a separate function in the contract.
       // For this demo, we'll use mock data
       
+      // Get current voter status to avoid dependency issues
+      const [, currentVoterHasVoted] = await contract.getVoterStatus(account);
+      
       // Mock data for demo purposes
       const mockRegisteredVoters = [
         { address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", hasVoted: true },
         { address: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", hasVoted: false },
         { address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906", hasVoted: true },
         { address: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65", hasVoted: false },
-        { address: account, hasVoted: voter.hasVoted }
+        { address: account, hasVoted: currentVoterHasVoted }
       ];
       
       setRegisteredVoters(mockRegisteredVoters);
@@ -708,13 +607,12 @@ export default function BlockchainProvider({ children }) {
       setError(`Error fetching registered voters: ${err.message}`);
       return [];
     }
-  };
+  }, [contract, isAdmin, account]);
 
-  const setDeployedContractAddress = async (address) => {
+  const setDeployedContractAddress = (address) => {
     setContractAddress(address);
-    if (provider && signer) {
-      await connectToContract(provider, signer, address);
-    }
+    // Store contract address in localStorage for persistence
+    localStorage.setItem('contractAddress', address);
   };
 
   // Listen for account changes
@@ -726,61 +624,118 @@ export default function BlockchainProvider({ children }) {
           setIsAdmin(false);
         } else {
           setAccount(accounts[0]);
-          if (contractAddress) {
-            connectToContract(provider, signer, contractAddress);
+          if (contract) {
+            // Check if the new account is admin
+            contract.admin().then((adminAddress) => {
+              setIsAdmin(adminAddress.toLowerCase() === accounts[0].toLowerCase());
+            });
+            // Update voter information for the new account
+            contract.getVoterStatus(accounts[0]).then(([isRegistered, hasVoted, candidateId]) => {
+              setVoter({
+                isRegistered,
+                hasVoted,
+                candidateId: Number(candidateId),
+              });
+            });
           }
         }
       };
 
       window.ethereum.on('accountsChanged', handleAccountsChanged);
 
-      // Cleanup function
       return () => {
         window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
       };
     }
-  }, [provider, signer, contractAddress]);
-
-  // On component mount, connect wallet and load data
+  }, [contract]);
+  // Automatically try to connect when the component mounts
   useEffect(() => {
-    const init = async () => {
-      await connectWallet();
-    };
-
-    init();
+    connectWallet();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reconnect if network or account changes
+  // Check if there's a stored contract address on component mount
   useEffect(() => {
-    const handleNetworkChange = async (chainId) => {
-      setLoading(true);
-      setError('');
-
-      // For development, we might be on a different chain
-      const targetChainId = '0x5'; // Goerli testnet
-      if (chainId !== targetChainId) {
-        setError('Please switch to the Goerli testnet in MetaMask');
-        setLoading(false);
-        return;
+    const storedContractAddress = localStorage.getItem('contractAddress');
+    
+    if (storedContractAddress) {
+      console.log('Found stored contract address:', storedContractAddress);
+      setContractAddress(storedContractAddress);
+      
+      // If we have a wallet connected, try to reconnect to the contract
+      if (account) {
+        connectToContract(provider, signer, storedContractAddress);
       }
-
-      // Reconnect to contract if address is set
-      if (contractAddress) {
-        await connectToContract(provider, signer, contractAddress);
-      }
-
-      setLoading(false);
-    };
-
-    if (window.ethereum) {
-      window.ethereum.on('chainChanged', handleNetworkChange);
-
-      // Cleanup function
-      return () => {
-        window.ethereum.removeListener('chainChanged', handleNetworkChange);
-      };
     }
-  }, [provider, signer, contractAddress]);
+  }, [account, provider, signer]); // Re-run when these dependencies change
+
+  // Set up a refresh interval to update time-based information
+  useEffect(() => {
+    if (electionInfo.isOpen) {
+      const interval = setInterval(refreshData, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [electionInfo.isOpen, contract, account]);
+
+  // Add logout function (make sure it's properly defined)
+  const disconnectWallet = () => {
+    // Reset all state
+    setAccount('');
+    setIsAdmin(false);
+    setContract(null);
+    setProvider(null);
+    setSigner(null);
+    setVoter({
+      isRegistered: false,
+      hasVoted: false,
+      candidateId: null
+    });
+    setCandidates([]);
+    setElectionInfo({
+      name: '',
+      isOpen: false,
+      startTime: 0,
+      endTime: 0,
+      remainingTime: 0
+    });
+    setRegisteredVoters([]);
+    setContractAddress('');
+    setError('');
+    
+    // Clear localStorage items
+    localStorage.removeItem('walletConnected');
+    localStorage.removeItem('contractAddress');
+    
+    // When using the real blockchain, we wouldn't clear this
+    // But for development/testing purposes, provide an option to reset
+    const resetMockData = true; // Set to false if you want to keep candidates between sessions
+    if (resetMockData) {
+      localStorage.removeItem('mockCandidates');
+      localStorage.removeItem('mockVoters');
+      localStorage.removeItem('mockVotingState');
+    }
+    
+    console.log('Wallet disconnected successfully');
+  };
+
+  // In your main useEffect for initialization
+  useEffect(() => {
+    const checkConnection = async () => {
+      // Check if user was previously connected
+      if (localStorage.getItem('walletConnected') === 'true') {
+        try {
+          // Try to reconnect wallet automatically
+          await connectWallet();
+        } catch (error) {
+          console.error("Failed to auto-connect wallet:", error);
+          localStorage.removeItem('walletConnected');
+        }
+      }
+    };
+    
+    checkConnection();
+  }, []); // Empty dependency array means this runs once on mount
 
   const value = {
     provider,
@@ -796,13 +751,6 @@ export default function BlockchainProvider({ children }) {
     candidates,
     registeredVoters,
     contractAddress,
-    // Backend-related states
-    backendConnected,
-    backendElections,
-    backendCandidates,
-    backendVoters,
-    currentElectionId,
-    // Functions
     connectWallet,
     connectToContract,
     fetchCandidates,
@@ -815,10 +763,7 @@ export default function BlockchainProvider({ children }) {
     getWinner,
     fetchRegisteredVoters,
     setDeployedContractAddress,
-    // Backend functions
-    checkBackendConnection,
-    loadBackendData,
-    createElectionInBackend, // Add this
+    disconnectWallet, // Change from logout to disconnectWallet
   };
 
   return (
